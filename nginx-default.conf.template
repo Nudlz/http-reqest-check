@@ -1,0 +1,42 @@
+map_hash_bucket_size 128;
+rewrite_log on;
+error_log    /var/log/nginx/map.error.log debug;
+
+map $http_destination $dest {
+        ~^((http[s]?|ftp):\/\/)([^:\/\s]+)\/(api2\/nextcloud)\/(.*) $1$3/nextcloud2/remote.php/dav/files/nc1/$5;
+	default $upstream_http_destination;
+}
+
+server {
+    listen 80;
+    server_name _;
+
+#    location = /oauth2/auth {
+#        proxy_pass       http://oauth2-proxy:4180;
+#        proxy_set_header Host             $host;
+#        proxy_set_header X-Real-IP        $remote_addr;
+#        proxy_set_header X-Scheme         $scheme;
+#        # nginx auth_request includes headers but not body
+#        proxy_set_header Content-Length   "";
+#        proxy_pass_request_body           off;
+#    }
+    
+    location / {
+        #auth_request /oauth2/auth;
+        #auth_request_set $email  $upstream_http_x_auth_request_email;
+#        proxy_set_header X-Email $email;
+        
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Host $host:80;
+        proxy_set_header X-Forwarded-Port 80;
+        proxy_set_header X-Forwarded-Server $host;
+        proxy_set_header X-Forwarded-Proto http;
+#	proxy_hide_header destination;
+	proxy_set_header destination $dest;
+
+        proxy_http_version 1.1;
+        proxy_pass http://web-app:8080/;
+    }
+}

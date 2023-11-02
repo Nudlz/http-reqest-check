@@ -1,0 +1,13 @@
+version: "3.7"
+
+services:
+
+  web-app:
+    build: .
+  
+  nginx:
+    image: nginx:1.21.6-alpine
+    volumes:
+      - ./nginx-default.conf.template:/etc/nginx/templates/default.conf.template
+    ports:
+      - 80:80
